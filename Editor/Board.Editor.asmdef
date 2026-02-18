@@ -1,0 +1,21 @@
+{
+    "name": "Board.Editor",
+    "rootNamespace": "Board.Editor",
+    "references": [
+        "Board",
+        "MosaicPuzzle",
+        "Helpers",
+        "Framework"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

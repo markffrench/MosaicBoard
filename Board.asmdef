@@ -1,0 +1,19 @@
+{
+    "name": "Board",
+    "rootNamespace": "Board",
+    "references": [
+        "MosaicPuzzle",
+        "Helpers",
+        "Framework",
+        "InputHelpers"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

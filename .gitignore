@@ -1,0 +1,9 @@
+# Unity generated
+*.meta
+*.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.sln
+*.csproj
