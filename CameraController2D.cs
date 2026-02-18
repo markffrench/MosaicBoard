@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Board;
 using Framework;
 using Framework.Input;
 using Helpers;
@@ -8,10 +9,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
 
-namespace Code.Board
+public class CameraController2D : MonoBehaviour, GlobalControls.ICameraActions
 {
-    public class CameraController2D : MonoBehaviour, GlobalControls.ICameraActions
-    {
         [SerializeField] private float maxZoom = 50;
         [SerializeField] private float minZoom = 4;
         [SerializeField] private float zoomSpeedMin = 2;
@@ -199,7 +198,7 @@ namespace Code.Board
             //gamepad and wasd controls
             Vector3 inputDelta = new Vector3(input.x, input.y, 0);
 
-            if (ProjectPrivacyAndSettings.GetEdgeScrollEnabled() && windowFocused && 
+            if (MosaicPrivacyAndSettings.GetEdgeScrollEnabled() && windowFocused &&
                 ControlSchemeSwapper.currentControlScheme == ControlScheme.KeyboardAndMouse)
             {
                 int margin = 1;
@@ -268,7 +267,7 @@ namespace Code.Board
             }
             
             // Map normalized sensitivity (0-1) to actual range with split scaling
-            float normalizedSensitivity = ProjectPrivacyAndSettings.GetZoomSensitivity();
+            float normalizedSensitivity = MosaicPrivacyAndSettings.GetZoomSensitivity();
             float sensitivity;
             
             if (normalizedSensitivity <= 0.5f)
@@ -691,4 +690,3 @@ namespace Code.Board
             return new Rect(bottomLeft.x, bottomLeft.y, topRight.x - bottomLeft.x, topRight.y - bottomLeft.y);
         }
     }
-}

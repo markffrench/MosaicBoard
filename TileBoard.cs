@@ -37,6 +37,7 @@ public class TileBoard : MonoBehaviour
     public event Action<Vector2Int> OnTileClicked;       // for game-specific per-tile reactions
     public event Action<int, int, int> OnAdvancedHintShown;  // clueA, clueB, overlapCount
     public event Action             OnAdvancedHintCleared;
+    public event Action<string>     OnAchievementUnlocked; // achievementID — host handles platform achievements
 
     // Called by TileBoardController when the hint button is pressed.
     public void RaiseHintRequested() => OnHintRequested?.Invoke();
@@ -1630,25 +1631,10 @@ public class TileBoard : MonoBehaviour
 
     public void MarkAchievementsComplete(string achievementID)
     {
-        Debug.Log("Marking achievement complete: "+achievementID);
-
-        if(!AchievementProvider.Instance.IsInitialized)
+        if (string.IsNullOrEmpty(achievementID))
             return;
-        
-        bool statsDirty = false;
 
-        if (!string.IsNullOrEmpty(achievementID))
-        {
-            if (AchievementProvider.Instance.UnlockAchievement(achievementID))
-            {
-                statsDirty = true;
-            }
-        }
-        
-        if (statsDirty)
-        {
-            AchievementProvider.Instance.StoreStats();
-        }
+        OnAchievementUnlocked?.Invoke(achievementID);
     }
     
     private IEnumerable<int> CheckRegionCompletion(bool prepareRevealAnim = false)

@@ -1,4 +1,5 @@
 using System;
+using Board;
 using Framework;
 using MosaicPuzzle;
 using Framework.Input;
@@ -243,7 +244,7 @@ public class ClickableTile : MonoBehaviour
         
         var displayState = state;
         
-        if (ProjectPrivacyAndSettings.GetInvertedColors())
+        if (MosaicPrivacyAndSettings.GetInvertedColors())
         {
             if (state == TileState.White)
             {

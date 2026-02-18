@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MosaicPuzzle;
 using UnityEngine;
 
-namespace Code.Board
+namespace Board
 {
     [System.Serializable]
     public struct TileMove
