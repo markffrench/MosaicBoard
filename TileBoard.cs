@@ -107,6 +107,9 @@ public class TileBoard : MonoBehaviour
     
     //how many tiles can the player flip on the entire board
     public int MaxProgress { get; private set; }
+
+    public int Width => boardStateTexture.Width;
+    public int Height => boardStateTexture.Height;
     
     //what % of the board is filled (correctly or otherwise)
     public float ProgressNormalized {get; private set; }
