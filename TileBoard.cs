@@ -419,8 +419,8 @@ public class TileBoard : MonoBehaviour
         solvedRegions = new bool[regions.Count];
         
         regionMap = CreateRegionMap(width, height, regions);
-        regionTypeMap = regionMappingRepository.CreateRegionTypeMap(regionMap);
-        crypticRegions = regionMappingRepository.CreateCrypticRegionMap();
+        regionTypeMap = regionMappingRepository.CreateRegionTypeMap(SceneId, regionMap);
+        crypticRegions = regionMappingRepository.CreateCrypticRegionMap(SceneId);
 
         borderFlags = new byte[regionTexture.width, regionTexture.height];
 
@@ -498,7 +498,7 @@ public class TileBoard : MonoBehaviour
         {
             r++;
             
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(r);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, r);
             bool shouldHide = false;
 
             if (mapping.Type is RegionType.Empty or RegionType.Door or RegionType.Walkable)
@@ -626,7 +626,7 @@ public class TileBoard : MonoBehaviour
 
     private bool IsRegionUnlocked(int regionIndex)
     {
-        RegionMapping regionMapping = regionMappingRepository.GetRegionMapping(regionIndex);
+        RegionMapping regionMapping = regionMappingRepository.GetRegionMapping(SceneId, regionIndex);
         return IsRegionPlayable?.Invoke(regionIndex) ?? false;
     }
 
@@ -1715,7 +1715,7 @@ public class TileBoard : MonoBehaviour
             
             for (int i = 0; i < regions.Count; i++)
             {
-                RegionMapping regionMapping = regionMappingRepository.GetRegionMapping(i);
+                RegionMapping regionMapping = regionMappingRepository.GetRegionMapping(SceneId, i);
 
                 if (regionMapping.Type == RegionType.Discovery)
                 {
@@ -2419,7 +2419,7 @@ public class TileBoard : MonoBehaviour
     {
         for (int regionId = 0; regionId < regions.Count; regionId++)
         {
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(regionId);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, regionId);
             
             if(mapping.Type != RegionType.Discovery)
                 continue;
@@ -2455,7 +2455,7 @@ public class TileBoard : MonoBehaviour
 
     private bool TrySolveRegion(int regionIndex)
     {
-        if (regionMappingRepository.GetRegionMapping(regionIndex).Type != RegionType.Discovery)
+        if (regionMappingRepository.GetRegionMapping(SceneId, regionIndex).Type != RegionType.Discovery)
         {
             Debug.LogError($"Region {regionIndex} is not a discovery region");
             return false;
@@ -3517,7 +3517,7 @@ public class TileBoard : MonoBehaviour
         if (HighlightedRegion >= 0 && HighlightedRegion < regions.Count)
         {
             // Check if region is a door
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(HighlightedRegion);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, HighlightedRegion);
             if (mapping.Type != RegionType.Door)
                 return;
 
@@ -3582,7 +3582,7 @@ public class TileBoard : MonoBehaviour
     {
         for (int i = 0; i < regions.Count; i++)
         {
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(i);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, i);
             if (mapping.Type == RegionType.Door)
             {
                 ShowRegionGlow(i);
@@ -3902,7 +3902,7 @@ public class TileBoard : MonoBehaviour
         // Solve all regions except the smallest one
         for (int i = 0; i < regions.Count; i++)
         {
-            if(regionMappingRepository.GetRegionMapping(i).Type != RegionType.Discovery)
+            if(regionMappingRepository.GetRegionMapping(SceneId, i).Type != RegionType.Discovery)
                 continue;
                 
 #if DEMO
@@ -4227,7 +4227,7 @@ public class TileBoard : MonoBehaviour
             if(regionIndex == startingRegion)
                 continue;
             
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(regionIndex);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, regionIndex);
             if (mapping != null && mapping.Type == RegionType.Door)
             {
                 eligibleRegions.Add(regionIndex);
@@ -4288,7 +4288,7 @@ public class TileBoard : MonoBehaviour
         // Check each discovery region to see if it's unlocked but currently hidden
         for (int r = 0; r < regions.Count; r++)
         {
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(r);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, r);
 
             if(Defines.IsDemo() && !DemoRegionIndices.Contains(r))
                 continue;
@@ -4614,7 +4614,7 @@ public class TileBoard : MonoBehaviour
         {
             regionCompletedThisClick = true;
                 
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(regionID);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, regionID);
 
             if (mapping.IsOpponentRegion)
             {
@@ -4860,7 +4860,7 @@ public class TileBoard : MonoBehaviour
         
         for (int r = 0; r < regions.Count; r++)
         {
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(r);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, r);
 
             if (mapping.Type is RegionType.Empty or RegionType.Door or RegionType.Walkable)
             {
@@ -4965,7 +4965,7 @@ public class TileBoard : MonoBehaviour
         {
             regionComplete = true;
             
-            RegionMapping mapping = regionMappingRepository.GetRegionMapping(regionID);
+            RegionMapping mapping = regionMappingRepository.GetRegionMapping(SceneId, regionID);
 
             if (mapping.IsOpponentRegion)
             {

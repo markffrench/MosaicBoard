@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Board;
 using Helpers;
@@ -6,20 +7,32 @@ using UnityEngine;
 
 public class RegionMappingRepository : MonoBehaviour
 {
-    [SerializeField] private TextAsset regionMappingJson;
-
-    protected RegionMapping[] regionMappings;
-
-    protected virtual void Awake()
+    [Serializable]
+    private class SceneEntry
     {
-        if (regionMappingJson == null)
-        {
-            Debug.LogError("RegionMappingRepository: regionMappingJson is not assigned.");
-            return;
-        }
+        public string sceneId;
+        public TextAsset json;
+    }
 
-        regionMappings = LoadRegionMapping(regionMappingJson.text);
-        Debug.Log($"Loaded {regionMappings.Length} region mappings");
+    [SerializeField] private SceneEntry[] scenes;
+
+    private Dictionary<string, RegionMapping[]> allMappings;
+
+    private void Awake()
+    {
+        allMappings = new Dictionary<string, RegionMapping[]>();
+
+        foreach (SceneEntry entry in scenes)
+        {
+            if (entry.json == null)
+            {
+                Debug.LogError($"RegionMappingRepository: json not assigned for sceneId '{entry.sceneId}'.");
+                continue;
+            }
+
+            allMappings[entry.sceneId] = LoadRegionMapping(entry.json.text);
+            Debug.Log($"RegionMappingRepository: loaded {allMappings[entry.sceneId].Length} mappings for '{entry.sceneId}'");
+        }
     }
 
     public static RegionMapping[] LoadRegionMapping(string json)
@@ -27,18 +40,20 @@ public class RegionMappingRepository : MonoBehaviour
         return JsonArrayHelper.FromJson<RegionMapping>(json).OrderBy(r => r.RegionIndex).ToArray();
     }
 
-    public virtual RegionMapping GetRegionMapping(int regionIndex)
+    public RegionMapping GetRegionMapping(string sceneId, int regionIndex)
     {
-        if (regionMappings == null || regionIndex < 0 || regionIndex >= regionMappings.Length)
+        RegionMapping[] mappings = GetMappings(sceneId);
+
+        if (mappings == null || regionIndex < 0 || regionIndex >= mappings.Length)
         {
-            Debug.LogError($"Invalid region index {regionIndex}");
+            Debug.LogError($"RegionMappingRepository: invalid region index {regionIndex} for scene '{sceneId}'");
             return null;
         }
 
-        return regionMappings[regionIndex];
+        return mappings[regionIndex];
     }
 
-    public virtual RegionType[,] CreateRegionTypeMap(int[,] regionMap)
+    public RegionType[,] CreateRegionTypeMap(string sceneId, int[,] regionMap)
     {
         int width = regionMap.GetLength(0);
         int height = regionMap.GetLength(1);
@@ -49,7 +64,7 @@ public class RegionMappingRepository : MonoBehaviour
             for (int y = 0; y < height; y++)
             {
                 int regionIndex = regionMap[x, y];
-                RegionMapping mapping = GetRegionMapping(regionIndex);
+                RegionMapping mapping = GetRegionMapping(sceneId, regionIndex);
                 regionTypeMap[x, y] = mapping != null ? mapping.Type : RegionType.Empty;
             }
         }
@@ -57,11 +72,24 @@ public class RegionMappingRepository : MonoBehaviour
         return regionTypeMap;
     }
 
-    public virtual bool[] CreateCrypticRegionMap()
+    public bool[] CreateCrypticRegionMap(string sceneId)
     {
-        if (regionMappings == null)
+        RegionMapping[] mappings = GetMappings(sceneId);
+
+        if (mappings == null)
             return Array.Empty<bool>();
 
-        return regionMappings.Select(m => m.IsCrypticRegion).ToArray();
+        return mappings.Select(m => m.IsCrypticRegion).ToArray();
+    }
+
+    private RegionMapping[] GetMappings(string sceneId)
+    {
+        if (allMappings == null || !allMappings.TryGetValue(sceneId, out RegionMapping[] mappings))
+        {
+            Debug.LogError($"RegionMappingRepository: no mappings registered for scene '{sceneId}'");
+            return null;
+        }
+
+        return mappings;
     }
 }
