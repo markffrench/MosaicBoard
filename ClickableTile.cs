@@ -5,7 +5,6 @@ using MosaicPuzzle;
 using Framework.Input;
 using Helpers;
 using InputHelpers;
-using MoreMountains.Feedbacks;
 using UnityEngine;
 
 public class ClickableTile : MonoBehaviour
@@ -199,13 +198,7 @@ public class ClickableTile : MonoBehaviour
         
         ParticleSystem instance = Instantiate(prefab, transform.position, Quaternion.identity);
         
-        if (PrivacyAndSettings.GetVibrationSetting() && ControlSchemeSwapper.currentControlScheme == ControlScheme.Touch)
-        {
-            MMF_Player player = instance.GetComponent<MMF_Player>();
-            
-            //player.FeedbacksIntensity = ControlSchemeSwapper.currentControlScheme == ControlScheme.Gamepad ? 0f : 1f;
-            player?.PlayFeedbacks();
-        }
+        instance.SendMessage("PlayFeedbacks", SendMessageOptions.DontRequireReceiver);
 
         Destroy(instance.gameObject, 1f);
     }
