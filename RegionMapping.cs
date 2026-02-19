@@ -23,7 +23,9 @@ namespace Board
 
         [Header("Region Gating (Discovery regions only)")]
         public bool IsGated = false;
+        public int GateScene;    // opaque scene identifier; cast to game-specific scene enum
         public int GateRegion;
+        public int GateScene2;   // opaque scene identifier; cast to game-specific scene enum
         public int GateRegion2;
 
         [Header("Region linking (Linked region will automatically solve once this one is solved)")]

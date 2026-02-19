@@ -8,9 +8,9 @@ public class RegionMappingRepository : MonoBehaviour
 {
     [SerializeField] private TextAsset regionMappingJson;
 
-    private RegionMapping[] regionMappings;
+    protected RegionMapping[] regionMappings;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         if (regionMappingJson == null)
         {
@@ -27,7 +27,7 @@ public class RegionMappingRepository : MonoBehaviour
         return JsonArrayHelper.FromJson<RegionMapping>(json).OrderBy(r => r.RegionIndex).ToArray();
     }
 
-    public RegionMapping GetRegionMapping(int regionIndex)
+    public virtual RegionMapping GetRegionMapping(int regionIndex)
     {
         if (regionMappings == null || regionIndex < 0 || regionIndex >= regionMappings.Length)
         {
@@ -38,7 +38,7 @@ public class RegionMappingRepository : MonoBehaviour
         return regionMappings[regionIndex];
     }
 
-    public RegionType[,] CreateRegionTypeMap(int[,] regionMap)
+    public virtual RegionType[,] CreateRegionTypeMap(int[,] regionMap)
     {
         int width = regionMap.GetLength(0);
         int height = regionMap.GetLength(1);
@@ -57,7 +57,7 @@ public class RegionMappingRepository : MonoBehaviour
         return regionTypeMap;
     }
 
-    public bool[] CreateCrypticRegionMap()
+    public virtual bool[] CreateCrypticRegionMap()
     {
         if (regionMappings == null)
             return Array.Empty<bool>();

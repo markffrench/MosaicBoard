@@ -38,13 +38,16 @@ public class TileBoard : MonoBehaviour
     public event Action<int, int, int> OnAdvancedHintShown;  // clueA, clueB, overlapCount
     public event Action             OnAdvancedHintCleared;
     public event Action<string>     OnAchievementUnlocked; // achievementID — host handles platform achievements
+    public event Action<string>     OnBoardRefreshed;      // sceneId — host re-initialises scene-specific components (e.g. MarkupController)
+
+    public IBoardSFX SFX { get; set; }
 
     // Called by TileBoardController when the hint button is pressed.
     public void RaiseHintRequested() => OnHintRequested?.Invoke();
 
     [Header("Scene Configuration")]
-    [SerializeField] public string ClueFolder;           // e.g. "clues/office/", set by host before Initialise()
-    [SerializeField] public string SceneId;              // e.g. "office", used for replay/save-PNG paths
+    [SerializeField] public string SceneId;              // e.g. "office", used for clue paths and replay/save-PNG paths
+    private string ClueFolder => $"clues/{SceneId.ToLower()}/";
     [SerializeField] private bool  isNonPuzzleBoard;     // true for non-puzzle scenes (e.g. Office hub)
 
     [SerializeField] private Transform[] tileHighlights;
@@ -1171,22 +1174,13 @@ public class TileBoard : MonoBehaviour
         return difficulty * 0.01f;
     }
 
-    // ClueFolder is set by the host (e.g. "clues/office/") before Initialise() is called.
-    // These helpers use it instead of a StoryScene parameter.
-
     private string GetAbsolutePathForClueFile(int difficulty)
     {
-        if (string.IsNullOrEmpty(ClueFolder))
-            Debug.LogError("TileBoard.ClueFolder is not set — assign it before calling Initialise().");
-
         return $"{Application.dataPath}/Resources/{ClueFolder}{GetClueFileForDifficulty(difficulty)}.txt";
     }
 
     private string GetResourcesPathForClueFolder()
     {
-        if (string.IsNullOrEmpty(ClueFolder))
-            Debug.LogError("TileBoard.ClueFolder is not set — assign it before calling Initialise().");
-
         return ClueFolder;
     }
 
@@ -1926,7 +1920,7 @@ public class TileBoard : MonoBehaviour
             
         // Restore the previous state without recording it as a new move (use instant = true)
         FlipTile(pos, move.fromState, true);
-        SFXManager.Get.TileFlipClear();
+        SFX?.TileFlipClear();
         
         SaveDirty = true;
 
@@ -1975,7 +1969,7 @@ public class TileBoard : MonoBehaviour
         
         if(editMode == EditMode.EditSolution)
         {
-            SFXManager.Get.StartDrag();
+            SFX?.StartDrag();
             
             TileState state = solution[pos.x, pos.y] ? TileState.White : TileState.Black;
             
@@ -2029,7 +2023,7 @@ public class TileBoard : MonoBehaviour
 
         if (drawingRegion == -1)
         {
-            SFXManager.Get.StartDrag();
+            SFX?.StartDrag();
 
             drawingRegion = region;
             
@@ -2136,13 +2130,13 @@ public class TileBoard : MonoBehaviour
         switch (drawingState)
         {
             case TileState.Empty:
-                SFXManager.Get.TileFlipClear();
+                SFX?.TileFlipClear();
                 break;
             case TileState.Black:
-                SFXManager.Get.TileFlipBlack();
+                SFX?.TileFlipBlack();
                 break;
             case TileState.White:
-                SFXManager.Get.TileFlipWhite();
+                SFX?.TileFlipWhite();
                 break;
         }
     }
@@ -2287,7 +2281,7 @@ public class TileBoard : MonoBehaviour
         UpdateHighlightedRegion(pos);
 
         if (anyErrors && errorsEnabled && !instant)
-            SFXManager.Get.PlayError();
+            SFX?.PlayError();
     }
 
     private bool CheckError(int nx, int ny, out bool hint, out bool filled)
@@ -2721,7 +2715,7 @@ public class TileBoard : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
         
-        SFXManager.Get.PlayReplayStart();
+        SFX?.PlayReplayStart();
 
         for (int i = 0; i < displayTexture.width; i++)
         {
@@ -2792,7 +2786,7 @@ public class TileBoard : MonoBehaviour
         float timer = 0f;
         var wait = new WaitForEndOfFrame();
         
-        SFXManager.Get.PlayReplayLoop();
+        SFX?.PlayReplayLoop();
         
         int[] regionSizes = regions.Select(region => region.Count).ToArray();
 
@@ -2870,7 +2864,7 @@ public class TileBoard : MonoBehaviour
             displayTexture.Apply();
         }
 
-        SFXManager.Get.PlayReplayEnd();
+        SFX?.PlayReplayEnd();
 
         yield return new WaitForSeconds(1f);
 
@@ -3141,12 +3135,7 @@ public class TileBoard : MonoBehaviour
         var bounds = cameraController2D.GetCameraBounds();
         RebuildScreen(bounds);
 
-        // Initialize markup system for current scene
-        MarkupController markupController = GetComponent<MarkupController>();
-        if (markupController != null)
-        {
-            markupController.InitializeForScene(SceneId);
-        }
+        OnBoardRefreshed?.Invoke(SceneId);
     }
 
     private void RefreshDisplayTexture()
@@ -3430,7 +3419,7 @@ public class TileBoard : MonoBehaviour
         }
 
         yield return new WaitForSeconds(0.5f);
-        SFXManager.Get.PlayHint();
+        SFX?.PlayHint();
 
         // Spawn mini highlights to show areas of influence and overlap
         SpawnMiniHighlights(first, second);
@@ -3670,7 +3659,7 @@ public class TileBoard : MonoBehaviour
         }
         
         yield return new WaitForSeconds(0.5f);
-        SFXManager.Get.PlayHint();
+        SFX?.PlayHint();
 
         hintHighlight.transform.position = new Vector3(bestX, bestY, ClickableTile.GetZOffset(new Vector2Int(bestX, bestY))-5f);
 
@@ -3763,7 +3752,7 @@ public class TileBoard : MonoBehaviour
         // Clear undo history since we've modified the board state
         undoSystem.ClearHistory();
         
-        SFXManager.Get.PlayClearErrors();
+        SFX?.PlayClearErrors();
         OnErrorsCleared?.Invoke();
     }
 
@@ -4362,7 +4351,7 @@ public class TileBoard : MonoBehaviour
             Debug.Log($"Revealing newly unlocked region: {regionIndex}");
             float pitch = AudioExtensions.GetSemitonePitch(pitchIndex);
             pitchIndex++;
-            SFXManager.Get.RegionReveal(pitch);
+            SFX?.RegionReveal(pitch);
             yield return RevealUnlockedRegion(regionIndex, 0.6f);
             //yield return new WaitForSeconds(0.5f); // Brief pause between regions
         }
@@ -4535,7 +4524,7 @@ public class TileBoard : MonoBehaviour
                 float t = (float)currentTileIndex / sortedTiles.Count;
                 float pitch = t * 0.25f + 0.75f;
                 float volume = t * 0.25f + 0.25f;
-                SFXManager.Get.TileReveal(volume, pitch);
+                SFX?.TileReveal(volume, pitch);
                 timeSinceLastSound = 0f;
             }
         
@@ -4655,11 +4644,11 @@ public class TileBoard : MonoBehaviour
         {
             if (wasBossRegion)
             {
-                SFXManager.Get.BossRegionComplete();
+                SFX?.BossRegionComplete();
             }
             else
             {
-                SFXManager.Get.RegionComplete();
+                SFX?.RegionComplete();
             }
         }
             
@@ -5004,7 +4993,7 @@ public class TileBoard : MonoBehaviour
         
         if (regionComplete)
         {
-            SFXManager.Get.BossRegionComplete();
+            SFX?.BossRegionComplete();
         }
 
         return regionComplete;
