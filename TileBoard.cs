@@ -3117,12 +3117,19 @@ public class TileBoard : MonoBehaviour
         }
         
         Debug.Log("Loaded save with "+progress+" tiles filled");
-        
+
+        // Populate solvedRegions from the restored tile states so that the first
+        // player interaction doesn't re-trigger completion animations for already-solved regions.
+        foreach (int _ in CheckRegionCompletion()) { }
+
+        // Sync the display texture and on-screen tiles to the loaded state.
+        ForceRefreshBoard();
+
         Vector2 cameraPos = new Vector2(save.cameraX, save.cameraY);
         float zoom = save.cameraZoom;
-        
+
         cameraController2D.SetLastPosition(cameraPos, zoom);
-        
+
         focusPos = Vector2Int.RoundToInt(cameraPos);
     }
     
