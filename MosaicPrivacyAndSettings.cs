@@ -115,7 +115,7 @@ namespace Board
 
         // ── Shimmer ────────────────────────────────────────────────────────────
 
-        public static bool GetShimmerEnabled() => SettingsRepository.GetBool(ShimmerEnabledKey, true);
+        public static bool GetShimmerEnabled() => SettingsRepository.GetBool(ShimmerEnabledKey, false);
         public static void SetShimmerEnabled(bool enabled) => SettingsRepository.SetBool(ShimmerEnabledKey, enabled);
 
         // ── Debug panel ────────────────────────────────────────────────────────
