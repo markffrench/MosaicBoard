@@ -201,10 +201,17 @@ public class TileBoard : MonoBehaviour
         UILayer = LayerMask.NameToLayer("UI");
         QualitySettings.vSyncCount = 1;
         //Application.targetFrameRate = 60;
-        
-        if(regionsTexture.width != baseIllustration.width || regionsTexture.height != baseIllustration.height)
-            throw new Exception("Textures must be the same size");
-        
+
+        if (baseIllustration != null)
+        {
+            if (regionsTexture.width != baseIllustration.width || regionsTexture.height != baseIllustration.height)
+                throw new Exception("Textures must be the same size");
+        }
+        else
+        {
+            baseIllustration = new Texture2D(regionsTexture.width, regionsTexture.height);
+        }
+
         ClickableTile.SetupWallSprites();
         ClickableTile.SetupNumberSprites();
         hintHighlight.gameObject.SetActive(false);
