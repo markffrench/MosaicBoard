@@ -39,6 +39,8 @@ public class TileBoard : MonoBehaviour
     public event Action             OnAdvancedHintCleared;
     public event Action<string>     OnAchievementUnlocked; // achievementID — host handles platform achievements
     public event Action<string>     OnBoardRefreshed;      // sceneId — host re-initialises scene-specific components (e.g. MarkupController)
+    public event Action<byte[], int> OnReplaySaveRequested; // data, slot — host persists replay
+    public Func<byte[]>              OnReplayLoadRequested; // host returns most-recent replay bytes (or null)
 
     public IBoardSFX SFX { get; set; }
 
@@ -2941,28 +2943,24 @@ public class TileBoard : MonoBehaviour
             Debug.LogError("No replay data to save");
             return;
         }
-    
+
         try
         {
-            string path = string.Format(ReplayFilePath, currentSaveIndex);
-            byte[] data = new byte[replayData.Length * sizeof(int)];
-
             int width = replayData.GetLength(0);
             int height = replayData.GetLength(1);
-            
+            byte[] data = new byte[replayData.Length * sizeof(int)];
+
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
                     byte[] bytes = BitConverter.GetBytes(replayData[x, y]);
-                    
                     int index = y * width + x;
-                    
                     bytes.CopyTo(data, index * sizeof(int));
                 }
             }
 
-            File.WriteAllBytes(path, data);
+            OnReplaySaveRequested?.Invoke(data, currentSaveIndex);
         }
         catch (Exception ex)
         {
@@ -2973,45 +2971,22 @@ public class TileBoard : MonoBehaviour
     public void LoadReplay()
     {
         replayIndex = 1;
-        DateTime latestTimestamp = DateTime.MinValue;
-        byte[] latestData = null;
-        
-        for (int i = 0; i < MaxBackups; i++)
-        {
-            string path = string.Format(ReplayFilePath, i);
-            
-            if (File.Exists(path))
-            {
-                DateTime timestamp = File.GetLastWriteTime(path);
-                
-                if (timestamp > latestTimestamp)
-                {
-                    latestTimestamp = timestamp;
-                    try
-                    {
-                        latestData = File.ReadAllBytes(path);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"Failed to read replay file {path}: {ex}");
-                    }
-                }
-            }
-        }
-        
-        if (latestData != null)
+
+        byte[] data = OnReplayLoadRequested?.Invoke();
+
+        if (data != null)
         {
             try
             {
                 int width = replayData.GetLength(0);
                 int height = replayData.GetLength(1);
-                
+
                 for (int x = 0; x < width; x++)
                 {
                     for (int y = 0; y < height; y++)
                     {
                         int index = y * width + x;
-                        replayData[x, y] = BitConverter.ToInt32(latestData, index * sizeof(int));
+                        replayData[x, y] = BitConverter.ToInt32(data, index * sizeof(int));
 
                         if (replayData[x, y] > replayIndex)
                             replayIndex = replayData[x, y];
@@ -3023,41 +2998,10 @@ public class TileBoard : MonoBehaviour
                 Debug.LogError($"Failed to parse replay data: {ex}");
             }
         }
-        else
-        {
-            string legacyPath = Application.persistentDataPath + "/replay.sav";
-            if (File.Exists(legacyPath))
-            {
-                try
-                {
-                    byte[] data = File.ReadAllBytes(legacyPath);
-                    int width = replayData.GetLength(0);
-                    int height = replayData.GetLength(1);
-                    
-                    for (int x = 0; x < width; x++)
-                    {
-                        for (int y = 0; y < height; y++)
-                        {
-                            int index = y * width + x;
-                            replayData[x, y] = BitConverter.ToInt32(data, index * sizeof(int));
 
-                            if (replayData[x, y] > replayIndex)
-                                replayIndex = replayData[x, y];
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"Failed to load legacy replay: {ex}");
-                }
-            }
-        }
-        
-        Debug.Log("Replay length loaded: "+replayIndex);
+        Debug.Log("Replay length loaded: " + replayIndex);
     }
     
-    private const int MaxBackups = 5;
-    private string ReplayFilePath => $"{Application.persistentDataPath}/{SceneId.ToLower()}/replay_{{0}}.sav";
     public string DebugString { get; private set; }
 
     private int currentSaveIndex;
