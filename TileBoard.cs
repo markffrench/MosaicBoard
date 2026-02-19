@@ -1329,7 +1329,10 @@ public class TileBoard : MonoBehaviour
     {
         List<Vector2Int> blankRegion = new List<Vector2Int>();
         List<List<Vector2Int>> regionMap = new List<List<Vector2Int>>();
+        
+#if INCLUDE_BLANK_REGION
         regionMap.Add(blankRegion);
+#endif
         
         RectInt bounds = new(0, 0, regionTexture.width, regionTexture.height);
         
@@ -1343,11 +1346,13 @@ public class TileBoard : MonoBehaviour
             if (visited[pos.x, pos.y])
                 continue;
 
+#if INCLUDE_BLANK_REGION
             if (pixels[pos.x + pos.y * width] == Color.black)
             {
                 blankRegion.Add(pos);
                 continue;
             }
+#endif
             
             List<Vector2Int> region = FloodFill(regionTexture, pos);
 
