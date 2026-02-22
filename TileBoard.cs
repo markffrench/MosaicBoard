@@ -639,7 +639,10 @@ public class TileBoard : MonoBehaviour
     private bool IsRegionUnlocked(int regionIndex)
     {
         RegionMapping regionMapping = regionMappingRepository.GetRegionMapping(SceneId, regionIndex);
-        return IsRegionPlayable?.Invoke(regionIndex) ?? false;
+        // Default to true so that projects without region-locking logic (e.g. proverbs, retrospective)
+        // show all regions as playable. Projects with complex unlock conditions (e.g. mosaic_of_the_strange)
+        // should assign IsRegionPlayable before calling Initialise().
+        return IsRegionPlayable?.Invoke(regionIndex) ?? true;
     }
 
     public bool IsOpponentTile(int x, int y)
