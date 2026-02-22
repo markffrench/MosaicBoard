@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Reflection;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using UnityEngine;
@@ -101,6 +103,26 @@ namespace Board
             File.Delete(Application.persistentDataPath + "/replay.sav");
         }
 
+        /// <summary>
+        /// Redirects the pre-package serialized type name (TileBoard+ProgressSave in Assembly-CSharp)
+        /// to the current Board.ProgressSave type.
+        /// </summary>
+        private class LegacyTypeBinder : SerializationBinder
+        {
+            public override Type BindToType(string assemblyName, string typeName)
+            {
+                if (typeName == "TileBoard+ProgressSave")
+                    return typeof(ProgressSave);
+                return Type.GetType($"{typeName}, {assemblyName}");
+            }
+
+            public override void BindToName(Type serializedType, out string assemblyName, out string typeName)
+            {
+                assemblyName = null;
+                typeName = null;
+            }
+        }
+
         private bool TryLoad(string path, int boardWidth, int boardHeight, out ProgressSave save, out DateTime timestamp)
         {
             save = null;
@@ -119,7 +141,9 @@ namespace Board
                 using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
                 using (CryptoStream cryptoStream = new CryptoStream(fs, cryptoServiceProvider.CreateDecryptor(key, iv), CryptoStreamMode.Read))
                 {
-                    save = (ProgressSave)new BinaryFormatter().Deserialize(cryptoStream);
+                    var formatter = new BinaryFormatter();
+                    formatter.Binder = new LegacyTypeBinder();
+                    save = (ProgressSave)formatter.Deserialize(cryptoStream);
                 }
 #pragma warning restore SYSLIB0011
 
