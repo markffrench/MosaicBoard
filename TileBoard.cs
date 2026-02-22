@@ -835,6 +835,10 @@ public class TileBoard : MonoBehaviour
         SolvedProgressNormalized = (float)SolvedCount / MaxProgress;
     }
 
+    /// <summary>
+    /// Creates region sprites using only the illustration — all pixels in the bounding box
+    /// are copied directly from the illustration. Used by mosaic_of_the_strange.
+    /// </summary>
     public static Sprite[] CreateRegionSprites(List<List<Vector2Int>> regionMap, Texture2D illustration)
     {
         Sprite[] sprites = new Sprite[regionMap.Count];
@@ -848,15 +852,15 @@ public class TileBoard : MonoBehaviour
                 Debug.LogError($"Empty region {i}, sounds like your region mapping is fucked bro");
                 continue;
             }
-            
+
             int xMin = region.Min(p => p.x);
             int xMax = region.Max(p => p.x);
             int yMin = region.Min(p => p.y);
             int yMax = region.Max(p => p.y);
-            
+
             int w = xMax - xMin + 1;
             int h = yMax - yMin + 1;
-            
+
             Texture2D spriteTexture = new Texture2D(w,h);
 
             spriteTexture.filterMode = FilterMode.Point;
@@ -876,6 +880,62 @@ public class TileBoard : MonoBehaviour
             
             spriteTexture.Apply();
             
+            sprites[i] = Sprite.Create(spriteTexture, new Rect(0, 0, w, h), Vector2.one * 0.5f);
+        }
+
+        return sprites;
+    }
+
+    /// <summary>
+    /// Creates region sprites with separate colours for in-region and out-of-region pixels.
+    /// In-region pixels are sampled from the illustration; out-of-region pixels within the
+    /// (optionally margin-expanded) bounding box use the getEmptyColor delegate.
+    /// Used by flemishproverbs, retrospective2024, and mosaic_of_the_pharaohs.
+    /// </summary>
+    public static Sprite[] CreateRegionSprites(
+        List<List<Vector2Int>> regionCoords,
+        int[,] regionMap,
+        Func<int, int, Color> getEmptyColor,
+        Texture2D illustration,
+        int margin = 0)
+    {
+        Sprite[] sprites = new Sprite[regionCoords.Count];
+
+        for (int i = 0; i < regionCoords.Count; i++)
+        {
+            List<Vector2Int> region = regionCoords[i];
+
+            if (region.Count == 0)
+            {
+                Debug.LogError($"Empty region {i}, sounds like your region mapping is fucked bro");
+                continue;
+            }
+
+            int xMin = Mathf.Max(0, region.Min(p => p.x) - margin);
+            int xMax = Mathf.Min(regionMap.GetLength(0) - 1, region.Max(p => p.x) + margin);
+            int yMin = Mathf.Max(0, region.Min(p => p.y) - margin);
+            int yMax = Mathf.Min(regionMap.GetLength(1) - 1, region.Max(p => p.y) + margin);
+
+            int w = xMax - xMin + 1;
+            int h = yMax - yMin + 1;
+
+            Texture2D spriteTexture = new Texture2D(w, h);
+            spriteTexture.filterMode = FilterMode.Point;
+
+            for (int x = 0; x < w; x++)
+            {
+                for (int y = 0; y < h; y++)
+                {
+                    int worldX = x + xMin;
+                    int worldY = y + yMin;
+                    Color c = regionMap[worldX, worldY] == i
+                        ? illustration.GetPixel(worldX, worldY)
+                        : getEmptyColor(worldX, worldY);
+                    spriteTexture.SetPixel(x, y, c);
+                }
+            }
+
+            spriteTexture.Apply();
             sprites[i] = Sprite.Create(spriteTexture, new Rect(0, 0, w, h), Vector2.one * 0.5f);
         }
 

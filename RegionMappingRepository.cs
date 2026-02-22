@@ -40,6 +40,12 @@ public class RegionMappingRepository : MonoBehaviour
         return JsonArrayHelper.FromJson<RegionMapping>(json).OrderBy(r => r.RegionIndex).ToArray();
     }
 
+    public int GetRegionCount(string sceneId)
+    {
+        RegionMapping[] mappings = GetMappings(sceneId);
+        return mappings?.Length ?? 0;
+    }
+
     public RegionMapping GetRegionMapping(string sceneId, int regionIndex)
     {
         RegionMapping[] mappings = GetMappings(sceneId);
